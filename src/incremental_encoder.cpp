@@ -1,4 +1,4 @@
-#ifdef TEST_INCREMENTAL_ENCODER
+#ifdef INCREMENTAL_ENCODER
 
 #include <Arduino.h>
 #include <SimpleFOC.h>

@@ -1,4 +1,4 @@
-#ifdef TEST_POTENTIOMETER
+#ifdef POTENTIOMETER
 
 #include <Arduino.h>
 

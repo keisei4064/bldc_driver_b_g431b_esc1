@@ -1,4 +1,4 @@
-#ifdef TEST_HOLE_SENSOR
+#ifdef HOLE_SENSOR
 
 #include <Arduino.h>
 #include <SimpleFOC.h>
