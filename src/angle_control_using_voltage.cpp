@@ -1,5 +1,5 @@
 // 参考：https://docs.simplefoc.com/angle_loop
-#ifdef ANGLE_CONTROL
+#ifdef ANGLE_CONTROL_USING_VOLTAGE
 
 #include <Arduino.h>
 #include <SimpleFOC.h>

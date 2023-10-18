@@ -1,5 +1,5 @@
-// 参照：https://docs.simplefoc.com/dc_current_torque_mode
-#ifdef TORQUE_CONTROL_USING_DC_CURRENT
+// 参考：https://docs.simplefoc.com/angle_loop
+#ifdef ANGLE_CONTROL_USING_DC_CURRENT
 
 #include <Arduino.h>
 #include <SimpleFOC.h>
@@ -54,6 +54,7 @@ float GetTemperture()
 
 void setup()
 {
+  pinMode(A_TEMPERATURE, INPUT_ANALOG);
   Serial.begin(115200);
   motor.useMonitoring(Serial);
   motor.monitor_variables = _MON_TARGET | _MON_ANGLE | _MON_VEL | _MON_VOLT_D | _MON_VOLT_Q | _MON_CURR_D | _MON_CURR_Q;
@@ -91,23 +92,39 @@ void setup()
   }
   motor.linkCurrentSense(&current_sense);
 
-  motor.current_limit = 5;
+  motor.current_limit = 15;
 
   // // PID parameters - default
-  motor.PID_current_q.P = 5;    // 3    - Arduino UNO/MEGA
+  motor.PID_current_q.P = 5;   // 3    - Arduino UNO/MEGA
   motor.PID_current_q.I = 100; // 300  - Arduino UNO/MEGA
   motor.PID_current_q.D = 0;
-  // motor.PID_current_q.limit = motor.voltage_limit;
+  motor.PID_current_q.limit = 15;
   // motor.PID_current_q.output_ramp = 1e6; // 1000 - Arduino UNO/MEGA
   // // Low pass filtering - default
-  motor.LPF_current_q.Tf = 0.02; // 0.01 - Arduino UNO/MEGA
+  motor.LPF_current_q.Tf = 0.3; // 0.01 - Arduino UNO/MEGA
 
   // モーター設定 ---------------------------------------------------
-  motor.torque_controller = TorqueControlType::dc_current;
-  motor.controller = MotionControlType::torque;
+  motor.torque_controller = TorqueControlType::voltage;
+  motor.controller = MotionControlType::angle;
   motor.voltage_limit = 12;   // [V]
+
   motor.velocity_limit = 500; // [rad/s]
   // motor.sensor_direction = Direction::CW; // 回転方向
+  
+  motor.PID_velocity.P = 0.2;
+  motor.PID_velocity.I = 0.01;
+  motor.PID_velocity.D = 0.0;
+  // motor.PID_velocity.output_ramp = 1000;
+  motor.LPF_velocity.Tf = 0.15;
+
+  motor.P_angle.P = 30;
+  motor.P_angle.I = 0; // usually only P controller is enough
+  motor.P_angle.D = 0; // usually only P controller is enough
+  motor.P_angle.limit = 2000;
+  // motor.P_angle.output_ramp = 10000; // default 1e6 rad/s^2
+  // motor.LPF_angle.Tf = 0; // default 0
+  motor.velocity_limit = 10; // rad/s - default 20
+
   motor.init();
 
   // -----------------------------------------------------------------
@@ -122,19 +139,28 @@ void setup()
   _delay(1000);
 }
 
+// angle set point variable
+const float target_delta{6.28f};
+float target_angle = 0;
+// timestamp for changing direction
+long timestamp_us = _micros();
+
 void loop()
 {
+  if (_micros() - timestamp_us > 1.5e6)
+  {
+    timestamp_us = _micros();
+    // inverse angle
+    target_angle += target_delta;
+  }
+
   motor.loopFOC();
-  motor.move(GetPotentiometerValue() * 3.0);
+  // motor.move(analogRead(kPotentiometer) * 0.2);
+  motor.move(target_angle);
   // motor.monitor();
 
-  // 温度を出力
-  if (++count % 1000 == 0)
-  {
-    Serial.print("Temperature: ");
-    Serial.print(GetTemperture());
-    Serial.println(" [C]");
-  }
+  if (count++ % 1000 == 0)
+    Serial.println(GetTemperture());
 }
 
 #endif

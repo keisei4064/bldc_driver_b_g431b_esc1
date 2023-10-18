@@ -1,5 +1,5 @@
-// 参照：https://docs.simplefoc.com/dc_current_torque_mode
-#ifdef TORQUE_CONTROL_USING_DC_CURRENT
+// 参考：https://docs.simplefoc.com/velocity_loop
+#ifdef VELOCITY_CONTROL_USING_DC_CURRENT
 
 #include <Arduino.h>
 #include <SimpleFOC.h>
@@ -54,6 +54,7 @@ float GetTemperture()
 
 void setup()
 {
+  pinMode(A_TEMPERATURE, INPUT_ANALOG);
   Serial.begin(115200);
   motor.useMonitoring(Serial);
   motor.monitor_variables = _MON_TARGET | _MON_ANGLE | _MON_VEL | _MON_VOLT_D | _MON_VOLT_Q | _MON_CURR_D | _MON_CURR_Q;
@@ -69,7 +70,7 @@ void setup()
 
   // ドライバー設定 ---------------------------------------------------
   driver.voltage_power_supply = 24;
-  driver.voltage_limit = 12;
+  // driver.voltage_limit = 12;
   Serial.print("Driver init ");
   if (driver.init())
     Serial.println("success!");
@@ -91,23 +92,30 @@ void setup()
   }
   motor.linkCurrentSense(&current_sense);
 
-  motor.current_limit = 5;
+  motor.current_limit = 15;
 
   // // PID parameters - default
-  motor.PID_current_q.P = 5;    // 3    - Arduino UNO/MEGA
+  motor.PID_current_q.P = 5;   // 3    - Arduino UNO/MEGA
   motor.PID_current_q.I = 100; // 300  - Arduino UNO/MEGA
   motor.PID_current_q.D = 0;
-  // motor.PID_current_q.limit = motor.voltage_limit;
+  motor.PID_current_q.limit = 15;
   // motor.PID_current_q.output_ramp = 1e6; // 1000 - Arduino UNO/MEGA
   // // Low pass filtering - default
-  motor.LPF_current_q.Tf = 0.02; // 0.01 - Arduino UNO/MEGA
+  motor.LPF_current_q.Tf = 0.3; // 0.01 - Arduino UNO/MEGA
 
   // モーター設定 ---------------------------------------------------
   motor.torque_controller = TorqueControlType::dc_current;
-  motor.controller = MotionControlType::torque;
-  motor.voltage_limit = 12;   // [V]
-  motor.velocity_limit = 500; // [rad/s]
-  // motor.sensor_direction = Direction::CW; // 回転方向
+  motor.controller = MotionControlType::velocity;
+  motor.voltage_limit = 18;   // [V]
+  motor.velocity_limit = 2000; // [rad/s]
+  motor.sensor_direction = Direction::CW; // 回転方向
+  // motor.target = 20.0;
+  motor.PID_velocity.P = 0.2;
+  motor.PID_velocity.I = 0.1;
+  motor.PID_velocity.D = 0.0;
+  motor.PID_velocity.limit = 2000;
+  // motor.PID_velocity.output_ramp = 1000;
+  motor.LPF_velocity.Tf = 0.3;
   motor.init();
 
   // -----------------------------------------------------------------
@@ -125,16 +133,16 @@ void setup()
 void loop()
 {
   motor.loopFOC();
-  motor.move(GetPotentiometerValue() * 3.0);
-  // motor.monitor();
+  motor.move(GetPotentiometerValue() * 50.0);
+  motor.monitor();
 
   // 温度を出力
-  if (++count % 1000 == 0)
-  {
-    Serial.print("Temperature: ");
-    Serial.print(GetTemperture());
-    Serial.println(" [C]");
-  }
+  // if (++count % 1000 == 0)
+  // {
+  //   Serial.print("Temperature: ");
+  //   Serial.print(GetTemperture());
+  //   Serial.println(" [C]");
+  // }
 }
 
 #endif

@@ -1,5 +1,5 @@
 // 参考：https://docs.simplefoc.com/velocity_loop
-#ifdef VELOCITY_CONTROL
+#ifdef VELOCITY_CONTROL_USING_VOLTAGE
 
 #include <Arduino.h>
 #include <SimpleFOC.h>
